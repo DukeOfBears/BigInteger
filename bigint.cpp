@@ -13,6 +13,13 @@ private:
     }
   }
 
+  void resize(const BigInt& right) {
+    if (length < right.length) {
+      length = right.length;
+      digits.resize(length);
+    }
+  }
+
 public:
   BigInt() = default;
 
@@ -37,7 +44,87 @@ public:
       num /= base;  
     }
   }
-  
+
+  BigInt& operator+=(const BigInt& right) {
+    if (positive && right.positive) {
+      resize(right); 
+      size_t excess = 0;
+      for (size_t i = 0; i < right.length; ++i) {
+        (digits[i] += right.digits[i]) += excess;
+        excess = 0;
+        if (digits[i] >= base) {
+          excess += 1;
+          digits[i] %= base;
+        }
+      }
+      if (excess) {
+        digits.push_back(excess);
+        ++length;
+      }
+      return *this;
+    } 
+    return *this -= right;
+  } 
+
+  BigInt& operator-=(const BigInt& right) {
+    resize(right);
+    size_t less = 0;
+      for (size_t i = 0; i < right.length; ++i) {
+        if (right.positive) {
+          (digits[i] -= right.digits[i]) -= less; 
+        } else {
+          (digits[i] += right.digits[i]) -= less;
+        }
+        less = 0;
+        if (digits[i] < 0) {
+          less += 1;
+          digits[i] += base;
+        }
+      }
+      if (less) {
+        positive = !positive;
+        digits.front() -= base;
+        digits.front() *= -1;
+        for (size_t i = 1; i < length; ++i) {
+          digits[i] -= base - 1;
+          digits[i] *= -1;
+        }
+      }
+      return *this;
+  }
+
+  bool operator<(const BigInt& right) const {
+    if (!positive && right.positive) return true;
+    if (positive && right.positive && (length < right.length)) return true;
+    if (positive && right.positive && length == right.length) {
+      for (size_t i = 0; i < length; ++i) {
+        if (digits[length - i - 1] < right.digits[length - i - 1]) return true;  
+      }
+    }
+    if (!positive && !right.positive && (right.length < length)) return true;
+    if (!positive && !right.positive && (right.length == length)) {
+      for (size_t i = 0; i < length; ++i) {
+        if (right.digits[length - i - 1] < digits[length - i - 1]) return true;
+      }
+    }
+    return false;
+  }
+
+  bool operator>(const BigInt& right) const {
+    return right < *this;
+  }
+
+  bool operator==(const BigInt& right) const {
+    if (length == right.length && positive == right.positive) {
+      for (size_t i = 0; i < length; ++i) {
+        if (digits[i] != right.digits[i]) return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
+
   size_t size() const {
     return length;
   }
@@ -67,7 +154,7 @@ std::ostream& operator<<(std::ostream& out, const BigInt& num) {
     
 
 int main() {
-  std::string s1 = "123";
+ /* std::string s1 = "123";
   std::string s2 = "-111";
   BigInt a = s1;
   BigInt b = s2;
@@ -77,5 +164,13 @@ int main() {
   BigInt c = num;
   std::cout << c.size() << '\n';
   std::cout << c << '\n';
+  */
+  std::string s1 = "186";
+  std::string s2 = "3215";
+  BigInt a = s1;
+  BigInt b = s2;
+  std::cout << (a -= b) << '\n';
+  
+
 }
 
